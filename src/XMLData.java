@@ -21,6 +21,10 @@ public class XMLData {
 	private static File file;
 	
 	
+	/** This function creates File chooser which opens only .xml files. 
+	 * Xml files is locked setting (filter) so no other data type can be open with it.
+	 * Ater the file is selected method parses the file and returns instance of the class (sigleton)
+	 */
 	public static XMLData getInstance() {
 		if(instance == null) {
 
@@ -57,6 +61,10 @@ public class XMLData {
 			return instance;
 		}
 	
+	
+	/**
+	 * getLength, getItem(int i) and getDocumet are getters methods used to return same thing.
+	 */
 	public int getLength()
 	{
 		return nodeList.getLength();
