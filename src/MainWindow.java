@@ -270,6 +270,14 @@ public class MainWindow {
 										// TODO Auto-generated catch block
 										e1.printStackTrace();
 									}
+									
+									MessageBox messageBox = new MessageBox(shell, SWT.OK|SWT.RESIZE |SWT.ICON_INFORMATION);
+									messageBox.setText("Document updated");
+									messageBox.setMessage("Changes saved");
+									int buttonID = messageBox.open();
+									switch(buttonID) {
+									case SWT.OK:	  
+									}
 								}
 							});
 						}
