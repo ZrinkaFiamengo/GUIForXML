@@ -2,10 +2,10 @@ import org.eclipse.swt.widgets.Display;
 import org.eclipse.swt.widgets.Shell;
 import org.eclipse.swt.widgets.Label;
 import org.eclipse.swt.SWT;
+import org.eclipse.swt.custom.ScrolledComposite;
 import org.eclipse.swt.widgets.Text;
 import org.eclipse.swt.widgets.Button;
-
-import java.io.File;
+import org.eclipse.swt.widgets.Composite;
 
 import javax.xml.transform.Transformer;
 import javax.xml.transform.TransformerConfigurationException;
@@ -18,23 +18,29 @@ import org.w3c.dom.Element;
 import org.w3c.dom.Node;
 import org.w3c.dom.NodeList;
 import org.eclipse.swt.widgets.Group;
+import org.eclipse.swt.events.ControlAdapter;
+import org.eclipse.swt.events.ControlEvent;
 import org.eclipse.swt.events.MouseAdapter;
 import org.eclipse.swt.events.MouseEvent;
+import org.eclipse.swt.layout.FillLayout;
+import org.eclipse.swt.widgets.Control;
+
 
 public class MainWindow {
 
 	protected Shell shell;
 
-	Label [] labels = new Label[100];
-	Text [] texts = new Text[100];
-	Button [] buttons = new Button[20];
-	Group [] groups = new Group[20];
+	Label [] labels = new Label[0];
+	Text [] texts = new Text[0];
+	Button [] buttons = new Button[0];
+	Group [] groups = new Group[0];
 	int numberOfBlocks = 0;
 
 	/**
 	 * Launch the application.
 	 * @param args
 	 */
+
 	public static void main(String[] args) {
 		try {
 			MainWindow window = new MainWindow();
@@ -49,9 +55,9 @@ public class MainWindow {
 	 */
 	public void open() {
 		Display display = Display.getDefault();
+		shell = new Shell();
 		createContents();
 		shell.open();
-		shell.layout();
 		while (!shell.isDisposed()) {
 			if (!display.readAndDispatch()) {
 				display.sleep();
@@ -63,14 +69,24 @@ public class MainWindow {
 	 * Create contents of the window.
 	 */
 	protected void createContents() {
-		shell = new Shell();
 		shell.setText("XML Settings");
 		shell.setSize(270, 100);
 
-		Button openFile = new Button(shell, SWT.PUSH);
+		FillLayout fl= new FillLayout();
+		shell.setLayout(fl);
+
+		final ScrolledComposite scrolledComposite = new ScrolledComposite(shell, SWT.BORDER | SWT.V_SCROLL);
+		scrolledComposite.setExpandHorizontal(true);
+		scrolledComposite.setExpandVertical(true);
+		scrolledComposite.setBounds(shell.getBounds());
+
+		final Composite composite = new Composite(scrolledComposite, SWT.NONE);
+
+		Button openFile = new Button(composite, SWT.NONE);
 		openFile.setBounds(20, 20, 200, 25);
 		openFile.setText("Choose XML file");
-		
+
+
 		openFile.addMouseListener(new MouseAdapter() {
 			@Override
 			public void mouseDown(MouseEvent e) {
@@ -84,10 +100,15 @@ public class MainWindow {
 						if (node.getNodeType() == Node.ELEMENT_NODE)
 						{
 							Element elem =(Element)node;
-
-							groups[i] = new Group(shell, SWT.NONE);
-							groups[i].setText(node.getNodeName() +" " + i);
 							
+							
+							Group[] tempGroups = new Group[groups.length + 1];
+						    System.arraycopy(groups, 0, tempGroups, 0, groups.length);
+						    groups = tempGroups;
+						    
+							groups[i] = new Group(composite, SWT.NONE);
+							groups[i].setText(node.getNodeName() +" " + i);
+
 
 							NodeList children = node.getChildNodes();
 							int num = 0;
@@ -100,7 +121,8 @@ public class MainWindow {
 									num++;
 								}
 							}
-							
+
+
 							if(i==0)
 							{
 								groups[i].setBounds(10, 10, 230, num*30 + 60);
@@ -109,8 +131,16 @@ public class MainWindow {
 							else
 							{
 								groups[i].setBounds(10, groups[i-1].getLocation().y + groups[i-1].getBounds().height +20 , 230, num*30 + 60);
-								shell.setSize(270, shell.getSize().y + num*30 + 100);
+								if(shell.getSize().y<700)
+								{
+									shell.setSize(270, shell.getSize().y + num*30 + 120);
+									scrolledComposite.setAlwaysShowScrollBars(true);
+								}
 							}
+							
+							Button[] tempButtons = new Button[buttons.length + 1];
+						    System.arraycopy(buttons, 0, tempButtons, 0, buttons.length);
+						    buttons = tempButtons;
 
 							buttons[i] = new Button(groups[i], SWT.PUSH);
 							buttons[i].setBounds(10, ++num*30, 200, 25);
@@ -127,18 +157,32 @@ public class MainWindow {
 
 									Node node = XMLData.getInstance().getItem(currentGroup);
 									
+									Control [] childrenOfTheGroup =  groups[currentGroup].getChildren();
+									Text [] textFieldsOfTheGroup = new Text [0];
+									for(int i=0; i<childrenOfTheGroup.length; i++)
+										if(childrenOfTheGroup[i] instanceof Text)
+										{
+											Text[] tempTexts = new Text[textFieldsOfTheGroup.length + 1];
+										    System.arraycopy(textFieldsOfTheGroup, 0, tempTexts, 0, textFieldsOfTheGroup.length);
+										    textFieldsOfTheGroup = tempTexts;
+										    textFieldsOfTheGroup[textFieldsOfTheGroup.length-1] = (Text) childrenOfTheGroup[i];
+										}
+
 									NodeList children = node.getChildNodes();
 									int num = 0;
+
+									System.out.println(textFieldsOfTheGroup.length);
+									
 									for (int j=0; j<children.getLength(); j++)
 									{
 										Node child = children.item(j);
 										if (!child.getNodeName().contains("#text"))
 										{
-											child.setTextContent(texts[currentGroup*3+num].getText());
+											child.setTextContent(textFieldsOfTheGroup[num].getText());
 											num++;
 										}
 									}
-									
+
 									TransformerFactory transformerFactory = TransformerFactory.newInstance();
 									Transformer transformer = null;
 									try {
@@ -148,7 +192,7 @@ public class MainWindow {
 										e1.printStackTrace();
 									}
 									DOMSource source = new DOMSource(XMLData.getInstance().getDocument());
-									StreamResult result = new StreamResult(new File("C:\\Users\\ezrifia\\Desktop\\configuration.xml"));
+									StreamResult result = new StreamResult(XMLData.getInstance().getFile());
 									try {
 										transformer.transform(source, result);
 									} catch (TransformerException e1) {
@@ -167,16 +211,41 @@ public class MainWindow {
 				}
 			}
 		});
+
+		scrolledComposite.setContent(composite);
+
+		scrolledComposite.setExpandVertical(true);
+		scrolledComposite.setExpandHorizontal(true);
+
+
+		scrolledComposite.addControlListener(new ControlAdapter() {
+			public void controlResized(ControlEvent e) {
+				org.eclipse.swt.graphics.Rectangle r = scrolledComposite.getClientArea();
+				scrolledComposite.setMinSize(composite.computeSize(r.width, SWT.DEFAULT));
+			}
+		});
 	}
 
 	private void MakeBlock(int i, int move, Element elem, String labelText)
 	{
+		
+		Label[] tempLabels = new Label[labels.length + 1];
+	    System.arraycopy(labels, 0, tempLabels, 0, buttons.length);
+	    labels = tempLabels;
+	    
 		labels[numberOfBlocks] = new Label(groups[i], SWT.PUSH);
 		labels[numberOfBlocks].setBounds(10, 30 + move, 55, 15);
 		labels[numberOfBlocks].setText(labelText);
+		
+		Text[] tempTexts = new Text[texts.length + 1];
+	    System.arraycopy(texts, 0, tempTexts, 0, texts.length);
+	    texts = tempTexts;
 
 		texts[numberOfBlocks] = new Text(groups[i], SWT.BORDER);
 		texts[numberOfBlocks].setBounds(130, 30 + move , 76, 21);
 		texts[numberOfBlocks].setText(elem.getElementsByTagName(labelText).item(0).getTextContent());  
 	}
+	
+	
+
 }

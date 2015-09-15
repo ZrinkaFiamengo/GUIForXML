@@ -18,6 +18,7 @@ public class XMLData {
 	private static XMLData instance = null;
 	private static NodeList nodeList;
 	private static Document document = null;
+	private static File file;
 	
 	
 	public static XMLData getInstance() {
@@ -29,7 +30,7 @@ public class XMLData {
 			int returnVal = chooser.showOpenDialog(null);
 			
 			if (returnVal == JFileChooser.APPROVE_OPTION) {
-				File file = chooser.getSelectedFile();
+				file = chooser.getSelectedFile();
 
 				instance = new XMLData();
 				DocumentBuilderFactory factory = DocumentBuilderFactory.newInstance();
@@ -69,5 +70,10 @@ public class XMLData {
 	public Document getDocument()
 	{
 		return document;
+	}
+	
+	public File getFile()
+	{
+		return file;
 	}
 }
